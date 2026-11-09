@@ -41,7 +41,7 @@ JOB_TIMEOUT = int(os.environ.get("RESUME_JOB_TIMEOUT", str(40 * 60)))
 LOG_DIR = Path(os.environ.get("RESUME_HELPER_LOGS", Path.home() / ".cache" / "resume-helper"))
 
 ALLOWED_ORIGINS = {
-    "https://arunpatwa.github.io",
+    "https://rustam1281.github.io",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 }

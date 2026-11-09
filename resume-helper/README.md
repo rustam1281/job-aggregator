@@ -28,7 +28,7 @@ already built downloads the PDFs again without rebuilding.
    python3 resume-helper/server.py
    ```
 2. Enable the button in your browser once by opening
-   <https://arunpatwa.github.io/job-board-aggregator/?resume-helper=on>
+   <https://rustam1281.github.io/job-aggregator/?resume-helper=on>
    (`?resume-helper=off` hides it again). Other visitors never see it.
 3. Chrome may ask to allow the site to access devices on your local network. Allow it,
    since that is how the page reaches the helper.

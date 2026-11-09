@@ -6,7 +6,7 @@ Automated job board aggregating 1,000,000+ positions from 20,000+ companies acro
 
 ## Live Site
 
-[View Job Board](https://arunpatwa.github.io/job-board-aggregator)
+[View Job Board](https://rustam1281.github.io/job-aggregator)
 
 ## Features
 
@@ -62,7 +62,7 @@ data/
 └── trends/daily.jsonl  # Append-only daily trend history (one JSON object per line)
 
 # Chunked job data (jobs_chunk_*.json.gz + jobs_manifest.json) is NOT in this repo.
-# Each run force-pushes it to a separate data repo (arunpatwa/job-board-data),
+# Each run force-pushes it to a separate data repo (rustam1281/job-board-data),
 # which serves the chunks over its own GitHub Pages site (Fastly-backed CDN).
 # This keeps the code repo small and code-only while the data repo stays flat
 # (force-pushed each run, so it never accumulates history).
@@ -76,7 +76,7 @@ data/
 4. **Chunk**: Results are split into ~25k-job gzipped chunks with a manifest file
 5. **Merge**: `merge_data.py` deduplicates against existing data and prunes jobs older than 30 days
 6. **Monitor**: A daily trend snapshot (per-platform and per-tier counts) is appended to `data/trends/daily.jsonl` and committed to main. `check_anomalies.py` compares each platform against its recent baseline and opens an issue if one drops off or spikes abnormally.
-7. **Deploy**: GitHub Actions force-pushes the regenerated chunks to the separate `job-board-data` [repo](https://github.com/arunpatwa/job-board-data) and creates a tagged release on main. The frontend fetches chunks from the data repo's GitHub Pages site, keeping the main repo code-only.
+7. **Deploy**: GitHub Actions force-pushes the regenerated chunks to the separate `job-board-data` [repo](https://github.com/rustam1281/job-board-data) and creates a tagged release on main. The frontend fetches chunks from the data repo's GitHub Pages site, keeping the main repo code-only.
 
 ## Company Discovery
 
@@ -85,8 +85,8 @@ Company lists are built from Common Crawl index data using a separate harvesting
 ## Local Development
 
 ```bash
-git clone https://github.com/arunpatwa/job-board-aggregator.git
-cd job-board-aggregator
+git clone https://github.com/rustam1281/job-aggregator.git
+cd job-aggregator
 python -m http.server 8000
 # Visit http://localhost:8000
 ```
@@ -109,4 +109,4 @@ The curated company datasets in `data/` are licensed under [CC BY-NC 4.0](https:
 
 ---
 
-Maintained by [Arun Patwa](https://github.com/arunpatwa). Based on [job-board-aggregator](https://github.com/Feashliaa/job-board-aggregator) by Riley Dorrington.
+Maintained by [rustam1281](https://github.com/rustam1281). Forked from [arunpatwa/job-board-aggregator](https://github.com/arunpatwa/job-board-aggregator). Based on [job-board-aggregator](https://github.com/Feashliaa/job-board-aggregator) by Riley Dorrington.

@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: "33 7 * * *" # 3:33am EST
   workflow_dispatch: # Manual trigger button
+# New repos give GITHUB_TOKEN read-only access by default; the release,
+# trend commit and anomaly issue steps need write.
+permissions:
+  contents: write
+  issues: write
 jobs:
   scrape:
     runs-on: ubuntu-latest
@@ -18,7 +23,12 @@ jobs:
 
       - name: Fetch existing data from data repo
         run: |
-          git clone --depth 1 https://github.com/arunpatwa/job-board-data.git prev-data
+          # Use our own data repo; on the very first run (empty/missing repo) seed
+          # the history from arunpatwa's data repo so the merge doesn't start from zero.
+          if ! git clone --depth 1 https://github.com/rustam1281/job-board-data.git prev-data || [ ! -d prev-data/data/chunks ]; then
+            rm -rf prev-data
+            git clone --depth 1 https://github.com/arunpatwa/job-board-data.git prev-data
+          fi
           mkdir -p data/chunks
           cp -r prev-data/data/chunks/* data/chunks/ 2>/dev/null || true
           cp prev-data/data/metadata.json data/metadata.json 2>/dev/null || true
@@ -26,7 +36,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12.10"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: pip install requests
@@ -172,7 +182,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Push regenerated data to data repo
         run: |
-          git clone https://x-access-token:${DATA_REPO_TOKEN}@github.com/arunpatwa/job-board-data.git data-repo
+          git clone https://x-access-token:${DATA_REPO_TOKEN}@github.com/rustam1281/job-board-data.git data-repo
           cd data-repo
           git checkout --orphan fresh
           git rm -rf . > /dev/null 2>&1 || true
