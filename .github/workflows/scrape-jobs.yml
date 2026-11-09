@@ -1,7 +1,7 @@
 name: Update Job Listings
 on:
   schedule:
-    - cron: "33 7 * * *" # 3:33am EST
+    - cron: "33 7,19 * * *" # every 12h: 07:33 and 19:33 UTC (1:03pm / 1:03am IST)
   workflow_dispatch: # Manual trigger button
 # New repos give GITHUB_TOKEN read-only access by default; the release,
 # trend commit and anomaly issue steps need write.
