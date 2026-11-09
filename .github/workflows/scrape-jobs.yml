@@ -8,12 +8,45 @@ on:
 permissions:
   contents: write
   issues: write
+env:
+  PYTHONUNBUFFERED: "1" # stream logs live instead of dumping them at the end
+
+# Two jobs so a failure after the slow scrape doesn't cost another hour:
+# "scrape" saves its output as a run artifact, "publish" downloads it.
+# If publish fails, use "Re-run failed jobs" and only publish runs again.
 jobs:
   scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 360 # 6 hours max to prevent hanging
-    env:
-      PYTHONUNBUFFERED: "1" # stream logs live instead of dumping them at the end
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run job scraper
+        run: |
+          cd scripts
+          python scraper.py --source automated
+
+      - name: Save scrape output for the publish job
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrape-output
+          path: scripts/output/
+          retention-days: 7
+          if-no-files-found: error
+
+  publish:
+    needs: scrape
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,18 +68,16 @@ jobs:
           cp -r prev-data/data/chunks/* data/chunks/ 2>/dev/null || true
           cp prev-data/data/metadata.json data/metadata.json 2>/dev/null || true
 
+      - name: Download scrape output
+        uses: actions/download-artifact@v4
+        with:
+          name: scrape-output
+          path: scripts/output/
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-
-      - name: Install dependencies
-        run: pip install requests
-
-      - name: Run job scraper
-        run: |
-          cd scripts
-          python scraper.py --source automated
 
       - name: Merge with existing data
         run: python scripts/merge_data.py
