@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Append-only trend log: on concurrent appends (e.g. a re-run), keep both lines
+data/trends/daily.jsonl merge=union
