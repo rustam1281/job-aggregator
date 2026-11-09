@@ -700,6 +700,44 @@ def fetch_company_jobs_paylocity(slug):
     return slug, [], None
 
 
+# ============================================================
+# Progress heartbeat: one compact line per minute across all platforms,
+# so the GitHub Actions log shows where the run is while it's going.
+# ============================================================
+PROGRESS = {}
+PROGRESS_LOCK = threading.Lock()
+
+
+def _progress_line(start):
+    mins = int((time.time() - start) // 60)
+    parts = []
+    with PROGRESS_LOCK:
+        for name, p in PROGRESS.items():
+            if p["state"] == "done":
+                parts.append(f"{name} done ({p['jobs']:,} jobs)")
+            else:
+                pct = (100 * p["done"] // p["total"]) if p["total"] else 100
+                parts.append(f"{name} {p['done']:,}/{p['total']:,} ({pct}%) {p['jobs']:,} jobs")
+    return f"[progress {mins}m] " + " | ".join(parts)
+
+
+def start_heartbeat(interval=60):
+    start = time.time()
+    stop = threading.Event()
+
+    def run():
+        while not stop.wait(interval):
+            print(_progress_line(start), flush=True)
+
+    threading.Thread(target=run, daemon=True).start()
+
+    def finish():
+        stop.set()
+        print(_progress_line(start), flush=True)
+
+    return finish
+
+
 def fetch_all_jobs(companies, fetcher, platform="ATS"):
     """Fetch jobs from all companies in parallel."""
     print("=" * 80)
@@ -732,6 +770,9 @@ def fetch_all_jobs(companies, fetcher, platform="ATS"):
 
     max_workers = MAX_WORKERS.get(platform_lower, 30)
 
+    with PROGRESS_LOCK:
+        PROGRESS[platform] = {"done": 0, "total": len(live_companies), "jobs": 0, "state": "running"}
+
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(fetcher, slug): slug for slug in live_companies}
 
@@ -739,6 +780,10 @@ def fetch_all_jobs(companies, fetcher, platform="ATS"):
 
             # fetcher returns slug, jobs, status_code (if implemented)
             slug, jobs, status_code = future.result()
+
+            with PROGRESS_LOCK:
+                PROGRESS[platform]["done"] = i
+                PROGRESS[platform]["jobs"] += len(jobs or [])
 
             if jobs:
                 all_jobs.extend(jobs)
@@ -753,6 +798,9 @@ def fetch_all_jobs(companies, fetcher, platform="ATS"):
                     print(
                         f"  [{i}/{len(live_companies)}] Checked... ({failed} inactive)"
                     )
+
+    with PROGRESS_LOCK:
+        PROGRESS[platform]["state"] = "done"
 
     # Update dead slug cache
     if new_dead:
@@ -1073,6 +1121,7 @@ def main():
     all_active_companies = {}
     all_jobs = []
 
+    finish_heartbeat = start_heartbeat()
     with ThreadPoolExecutor(max_workers=len(platforms)) as platform_executor:
         futures = {
             platform_executor.submit(fetch_all_jobs, companies, fetcher, name): name
@@ -1087,6 +1136,8 @@ def main():
             print(
                 f"\n  >>> {name} COMPLETE: {len(active):,} active, {len(jobs):,} jobs <<<\n"
             )
+
+    finish_heartbeat()
 
     # Combine all company sets for total count
     all_companies = (

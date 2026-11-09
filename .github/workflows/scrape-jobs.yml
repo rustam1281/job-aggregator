@@ -12,6 +12,8 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 360 # 6 hours max to prevent hanging
+    env:
+      PYTHONUNBUFFERED: "1" # stream logs live instead of dumping them at the end
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
